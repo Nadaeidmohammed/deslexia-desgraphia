@@ -9,7 +9,7 @@ export class ChildProvider {
   constructor(
     @InjectModel(Child)
     private readonly childModel: typeof Child,
-  ) {}
+  ) { }
 
   async create(parentId: number, dto: CreateChildDto): Promise<Child> {
     return this.childModel.create({
@@ -25,7 +25,7 @@ export class ChildProvider {
     });
   }
 
-  async findOne(id: number, parentId: number): Promise<Child> {
+  async findOne(id: number, parentId: number): Promise<Child | null> {
     return this.childModel.findOne({
       where: { id, parentId },
     });
@@ -36,10 +36,7 @@ export class ChildProvider {
     parentId: number,
     dto: UpdateChildDto,
   ): Promise<Child | null> {
-    const child = await this.childModel.findOne({
-      where: { id, parentId },
-    });
-
+    const child = await this.findOne(id, parentId);
     if (!child) return null;
 
     return child.update(dto);
