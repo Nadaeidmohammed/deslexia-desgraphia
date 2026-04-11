@@ -1,0 +1,30 @@
+FROM node:20-alpine
+
+# Install dependencies for native modules
+RUN apk add --no-cache python3 make g++
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# --- CRITICAL STEP: Copy tsconfig.json BEFORE npm ci ---
+COPY tsconfig.json ./
+# If you have other necessary config files like .env, copy them here too
+# COPY .env ./
+
+# Install dependencies
+RUN npm ci # This command triggers the build script that needs tsconfig.json
+
+# Copy source code
+COPY . .
+
+# Create logs directory
+RUN mkdir -p logs
+
+# Expose port and debug port
+EXPOSE 3000 9229
+
+# Start the application in development mode with debugging
+CMD ["npm", "run", "start:debug"]
