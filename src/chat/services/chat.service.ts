@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   Logger,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ChatProvider } from '../providers/chat.provider';
 import { Conversation } from '../entities/conversation.entity';
@@ -13,16 +14,18 @@ import {
   UpdateConversationDto,
   QueryConversationDto,
 } from '../dto';
-import { MessageType } from '../dto/create-message.dto';
 import { PaginationResult } from '../../common/interfaces/pagination';
 import { QueryMessageDto } from '../dto/query-message.dto';
 import Groq from 'groq-sdk';
 import { ConfigService } from '@nestjs/config';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
-export class ChatService {
+export class ChatService implements OnModuleInit {
   private groq: Groq;
   private readonly logger = new Logger(ChatService.name);
+  // تعريف الـ ID الثابت لشلبي
+  private readonly SHELBY_BOT_ID = 999;
 
   constructor(
     private readonly chatProvider: ChatProvider,
@@ -37,6 +40,7 @@ export class ChatService {
 
     this.groq = new Groq({ apiKey });
   }
+
   async createConversation(
     createConversationDto: CreateConversationDto,
     userId: number,
@@ -73,7 +77,6 @@ export class ChatService {
       throw new NotFoundException('Conversation not found');
     }
 
-    // Check if user has access to this conversation
     if (userId && conversation.userId !== userId) {
       throw new ForbiddenException('Access denied to this conversation');
     }
@@ -86,16 +89,10 @@ export class ChatService {
     updateConversationDto: UpdateConversationDto,
     userId: number,
   ): Promise<Conversation> {
-    // Ensure user has access before updating
     await this.getConversation(id, userId);
-
     await this.chatProvider.updateConversation(id, updateConversationDto);
     return this.getConversation(id);
   }
-
-  // async deleteConversation(id: number): Promise<void> {
-  //   await this.chatProvider.deleteConversation(id);
-  // }
 
   async countConversations(): Promise<number> {
     return this.chatProvider.countConversations();
@@ -112,49 +109,49 @@ export class ChatService {
       throw new ForbiddenException('Cannot send message to archived conversation');
     }
 
-    const userMessage = await this.chatProvider.createMessage({
+    // 1. حفظ رسالة المستخدم
+    await this.chatProvider.createMessage({
       conversationId,
       senderId,
       content: createMessageDto.content,
       type: 'text',
     });
 
-    // 2. جلب تاريخ المحادثة (عشان الـ AI يعرف السياق - Restore Context)
+    // 2. جلب تاريخ المحادثة وتنسيقه للـ AI
     const history = await this.chatProvider.findConversationMessages(conversationId, 10);
     const formattedHistory = history.map(msg => ({
-      role: msg.senderId === senderId ? 'user' : 'assistant',
+      // لو الـ senderId هو شلبي يبقى assistant، غير كدة يبقى user
+      role: msg.senderId === this.SHELBY_BOT_ID ? 'assistant' : 'user',
       content: msg.content,
     }));
 
-    // 3. استدعاء الـ AI (Groq) للتحليل والرد
+    // 3. استدعاء Groq
     const aiAnalysis = await this.getAiResponse(createMessageDto.content, formattedHistory);
 
-    // 4. حفظ رد الـ AI في قاعدة البيانات
-    // ملاحظة: الـ metadata ستحتوي على الـ feedback (detected_words, suspected_letter, etc.)
+    // 4. حفظ رد شلبي باستخدام الـ ID الثابت 999
     const botMessage = await this.chatProvider.createMessage({
       conversationId,
-      senderId: 0, // أو ID مخصص للبوت
+      senderId: this.SHELBY_BOT_ID,
       content: aiAnalysis.reply,
       type: 'text',
-      metadata: aiAnalysis.feedback, // هنا نخزن التحليل (الديسليكسيا)
+      metadata: aiAnalysis.feedback,
     });
 
     return botMessage;
   }
 
-  // دالة مساعدة للتعامل مع Groq (نفس منطق كود البايثون)
   private async getAiResponse(userContent: string, history: any[]) {
     const systemPrompt = `
-    You are an AI assistant that helps parents support their children with learning difficulties such as dyslexia and dysgraphia.
+    You are an AI assistant named Shelby "شلبي" that helps parents support their children with learning difficulties such as dyslexia and dysgraphia.
     You must ALWAYS respond with VALID JSON ONLY.
 
     Response format:
     {
      "reply": "A natural Arabic message to the parent",
      "feedback": {
-       "detected_words": [],
-       "suspected_letter": "",
-       "issue_type": "dyslexia or dysgraphia or none"
+        "detected_words": [],
+        "suspected_letter": "",
+        "issue_type": "dyslexia or dysgraphia or none"
         }
     }
 
@@ -163,7 +160,7 @@ export class ChatService {
     - The "reply" must be a normal, friendly Arabic response to the parent.
     - Extract words mentioned by the parent that show difficulty.
     - Detect the most repeated letter causing trouble.
-    - Return ONLY JSON. Do not write any conversational text outside the JSON block.
+    - Return ONLY JSON.
   `;
 
     const completion = await this.groq.chat.completions.create({
@@ -185,15 +182,11 @@ export class ChatService {
     query: QueryMessageDto,
     userId?: number,
   ): Promise<PaginationResult<Message>> {
-
     if (userId) {
       await this.getConversation(conversationId, userId);
     }
-
     query.conversationId = conversationId;
-
     const { rows, count } = await this.chatProvider.findAllMessages(query);
-
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 50;
 
@@ -210,21 +203,8 @@ export class ChatService {
 
   async markMessageAsRead(messageId: number, userId: number): Promise<void> {
     const message = await this.chatProvider.findMessageById(messageId);
-
-    if (!message) {
-      throw new NotFoundException('Message not found');
-    }
-
-    // Only allow marking messages as read if user is part of the conversation
-    // if (message.conversation.userId !== userId) {
-    //   throw new ForbiddenException('Access denied');
-    // }
-
-    // Don't mark own messages as read
-    if (message.senderId === userId) {
-      return;
-    }
-
+    if (!message) throw new NotFoundException('Message not found');
+    if (message.senderId === userId) return;
     await this.chatProvider.updateMessageReadStatus(messageId, true);
   }
 
@@ -232,21 +212,10 @@ export class ChatService {
     return this.chatProvider.countUnreadMessages(userId);
   }
 
-  // Additional methods that delegate to ChatProvider
-  // async findAllConversations(queryDto: any): Promise<any> {
-  //   return this.chatProvider.findAllConversations(queryDto);
-  // }
-
   async deleteConversation(id: number, userId: number): Promise<void> {
     const conversation = await this.chatProvider.findOneConversation(id);
-    if (!conversation) {
-      throw new NotFoundException('Conversation not found');
-    }
-
-    if (conversation.userId !== userId) {
-      throw new ForbiddenException('You do not have permission to delete this conversation');
-    }
-
+    if (!conversation) throw new NotFoundException('Conversation not found');
+    if (conversation.userId !== userId) throw new ForbiddenException('No permission');
     await this.chatProvider.deleteConversation(id);
   }
 
@@ -256,18 +225,36 @@ export class ChatService {
 
   async deleteMessage(id: number, userId: number): Promise<void> {
     const message = await this.chatProvider.findMessageById(id);
-    if (!message) {
-      throw new NotFoundException('Message not found');
-    }
-
-    if (message.senderId !== userId) {
-      throw new ForbiddenException('You can only delete your own messages');
-    }
-
+    if (!message) throw new NotFoundException('Message not found');
+    if (message.senderId !== userId) throw new ForbiddenException('Access denied');
     await this.chatProvider.deleteMessage(id);
   }
 
   async getMessageStats(): Promise<number> {
     return this.chatProvider.countMessages();
+  }
+  async onModuleInit() {
+    try {
+      // بنشيك هل شلبي موجود في الداتابيز (اللي هي على Aiven حالياً)
+      const shelbyExists = await User.findByPk(this.SHELBY_BOT_ID);
+
+      if (!shelbyExists) {
+        await User.create({
+          id: this.SHELBY_BOT_ID,
+          email: 'shelby-bot@ai.com',
+          password: 'system-generated-password',
+          role: 'parent',
+          isActive: true,
+          isEmailVerified: true,
+          avatar: 'https://cdn-icons-png.flaticon.com/512/616/616430.png', // لوجو مؤقت لشلبي
+        } as any);
+
+        this.logger.log('✅ Shelby Bot was created successfully in the database.');
+      } else {
+        this.logger.log('ℹ️ Shelby Bot already exists.');
+      }
+    } catch (error) {
+      this.logger.error('❌ Error initializing Shelby Bot:', error);
+    }
   }
 }

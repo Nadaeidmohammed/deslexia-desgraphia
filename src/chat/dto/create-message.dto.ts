@@ -3,6 +3,7 @@ import {
   IsString,
   IsOptional,
   IsEnum,
+  IsObject,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -25,10 +26,11 @@ export class CreateMessageDto {
     default: MessageType.TEXT,
   })
   @IsEnum(MessageType)
+  @IsOptional()
   type: MessageType = MessageType.TEXT;
 
   @ApiPropertyOptional({ description: 'Message metadata (JSON object)' })
   @IsOptional()
+  @IsObject()
   metadata?: Record<string, any>;
-
 }

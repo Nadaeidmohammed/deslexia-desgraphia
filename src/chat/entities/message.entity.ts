@@ -44,7 +44,7 @@ export class Message extends Model<Message> {
   content: string;
 
   @Column({
-    type: DataType.ENUM('text', 'image', 'file', 'location'),
+    type: DataType.ENUM('text', 'image', 'file', 'system'),
     defaultValue: 'text',
   })
   type: string;
@@ -53,8 +53,8 @@ export class Message extends Model<Message> {
     type: DataType.JSON,
     allowNull: true,
   })
-  metadata: any;
-
+  metadata: any; 
+  
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false,

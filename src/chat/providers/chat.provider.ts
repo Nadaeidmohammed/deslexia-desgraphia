@@ -63,7 +63,7 @@ export class ChatProvider {
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'firstName', 'lastName', 'avatar'],
+          attributes: ['id','avatar'],
         },
         {
           model: Message,
@@ -86,7 +86,7 @@ export class ChatProvider {
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'firstName', 'lastName', 'avatar'],
+          attributes: ['id','avatar'],
         },
       ],
     });
@@ -160,7 +160,7 @@ export class ChatProvider {
         {
           model: User,
           as: 'sender',
-          attributes: ['id', 'firstName', 'lastName', 'avatar'],
+          attributes: ['id','avatar'],
         },
         {
           model: Conversation,
@@ -180,7 +180,7 @@ export class ChatProvider {
         {
           model: User,
           as: 'sender',
-          attributes: ['id', 'firstName', 'lastName', 'avatar'],
+          attributes: ['id', 'avatar'],
         },
         {
           model: Conversation,
@@ -201,7 +201,7 @@ export class ChatProvider {
         {
           model: User,
           as: 'sender',
-          attributes: ['id', 'firstName', 'lastName', 'avatar'],
+          attributes: ['id','avatar'],
         },
       ],
       order: [['createdAt', 'ASC']],
@@ -277,7 +277,7 @@ export class ChatProvider {
         {
           model: User,
           as: 'sender',
-          attributes: ['id', 'firstName', 'lastName', 'avatar'],
+          attributes: ['id', 'avatar'],
         },
         {
           model: Conversation,
