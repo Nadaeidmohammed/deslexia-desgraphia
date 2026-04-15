@@ -14,6 +14,7 @@ import {
 } from 'sequelize-typescript';
 import { User } from '../../users/entities/user.entity';
 import { Message } from './message.entity';
+import { Child } from 'src/child/entities/child.entity';
 
 @Table({
   tableName: 'conversations',
@@ -51,6 +52,15 @@ export class Conversation extends Model<Conversation> {
   })
   lastMessageAt: Date;
 
+  @ForeignKey(() => Child)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
+  childId: number;
+
+
+
   @CreatedAt
   createdAt: Date;
 
@@ -59,6 +69,9 @@ export class Conversation extends Model<Conversation> {
 
   @BelongsTo(() => User)
   user: User;
+
+  @BelongsTo(() => Child)
+  child: any;
 
   @HasMany(() => Message)
   messages: Message[];
