@@ -20,8 +20,8 @@ export class Child extends Model<Child> {
   @Column({ type: DataType.STRING, allowNull: false })
   name: string;
 
-  @Column({ type: DataType.STRING, allowNull: false })
-  birthDate: string;
+  @Column({ type: DataType.DATE, allowNull: false })
+  birthDate: Date;
 
   @Column({ type: DataType.INTEGER, allowNull: false })
   gender: number;

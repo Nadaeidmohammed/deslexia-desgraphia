@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { SubmissionProvider } from './providers/submission.provider';
 import { Submission } from './entities/submission.entity';
-import { SubmissionsController } from './controllers/submission.controller';
-import { SubmissionsService } from './services/submission.service';
+import { SubmissionService } from './services/submission.service';
+import { SubmissionProvider } from './providers/submission.provider';
+import { SubmissionController } from './controllers/submission.controller';
 
 @Module({
   imports: [SequelizeModule.forFeature([Submission])],
-  controllers: [SubmissionsController],
-  providers: [SubmissionsService, SubmissionProvider],
-  exports: [SubmissionsService],
+  controllers: [SubmissionController],
+  providers: [SubmissionService, SubmissionProvider],
+  exports: [SubmissionService],
 })
-export class SubmissionsModule {}
+export class SubmissionModule {}

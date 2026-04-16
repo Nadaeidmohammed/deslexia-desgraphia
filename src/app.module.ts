@@ -9,7 +9,7 @@ import { UsersModule } from './users/users.module';
 import { ChatModule } from './chat/chat.module';
 import { CommonModule } from './common/common.module';
 import { ChildrenModule } from './child/child.module';
-import { SubmissionsModule } from './submission/submission.module';
+import { SubmissionModule } from './submission/submission.module';
 import { ExercisesModule } from './exercises/exercises.module';
 
 @Module({
@@ -28,10 +28,10 @@ import { ExercisesModule } from './exercises/exercises.module';
     ChatModule,
     CommonModule,
     ChildrenModule,
-    SubmissionsModule,
+    SubmissionModule,
     ExercisesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

@@ -9,11 +9,12 @@ export class ChildProvider {
   constructor(
     @InjectModel(Child)
     private readonly childModel: typeof Child,
-  ) { }
+  ) {}
 
   async create(parentId: number, dto: CreateChildDto): Promise<Child> {
     return this.childModel.create({
       ...dto,
+      birthDate: new Date(dto.birthDate),
       parentId,
     });
   }
@@ -39,7 +40,10 @@ export class ChildProvider {
     const child = await this.findOne(id, parentId);
     if (!child) return null;
 
-    return child.update(dto);
+    return child.update({
+      ...dto,
+      birthDate: dto.birthDate ? new Date(dto.birthDate) : child.birthDate,
+    });
   }
 
   async remove(id: number, parentId: number): Promise<number> {

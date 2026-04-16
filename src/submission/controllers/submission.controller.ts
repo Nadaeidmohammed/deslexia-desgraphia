@@ -1,25 +1,55 @@
-import { Controller, Post, Get, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  Patch,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
+import { SubmissionService } from '../services/submission.service';
 import { CreateSubmissionDto } from '../dto/create-submission.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { SubmissionsService } from '../services/submission.service';
+import { UpdateSubmissionDto } from '../dto/update-submission.dto';
 
-@ApiTags('Submissions')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('submissions')
-export class SubmissionsController {
-  constructor(private readonly submissionsService: SubmissionsService) {}
+export class SubmissionController {
+  constructor(private readonly submissionService: SubmissionService) {}
 
+  // CREATE
   @Post()
-  @ApiOperation({ summary: 'Submit exercise result (from Mobile/Web)' })
-  async create(@Body() dto: CreateSubmissionDto) {
-    return this.submissionsService.submitExercise(dto);
+  create(@Body() dto: CreateSubmissionDto) {
+    return this.submissionService.create(dto);
   }
 
+  // GET ALL
+  @Get()
+  findAll() {
+    return this.submissionService.findAll();
+  }
+
+  // GET BY CHILD
   @Get('child/:childId')
-  @ApiOperation({ summary: 'Get all submissions for a specific child' })
-  async getProgress(@Param('childId') childId: number) {
-    return this.submissionsService.getChildProgress(childId);
+  findByChild(@Param('childId', ParseIntPipe) childId: number) {
+    return this.submissionService.findByChild(childId);
+  }
+
+  // UPDATE
+  @Patch(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateSubmissionDto,
+  ) {
+    return this.submissionService.update(id, dto);
+  }
+
+  // DELETE
+  @Delete(':id')
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.submissionService.delete(id);
+  }
+  @Get('report/:childId')
+  getReport(@Param('childId', ParseIntPipe) childId: number) {
+    return this.submissionService.getReport(childId);
   }
 }

@@ -1,27 +1,56 @@
-import { IsNotEmpty, IsNumber, IsString, IsOptional, IsUrl } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsInt,
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsArray,
+  IsObject,
+} from 'class-validator';
+
+export enum ExerciseType {
+  READING = 'reading',
+  WRITING = 'writing',
+  LISTENING = 'listening',
+}
+
+export enum SubmissionStatus {
+  PASS = 'pass',
+  FAIL = 'fail',
+}
 
 export class CreateSubmissionDto {
-  @ApiProperty({ example: 1 })
-  @IsNumber()
-  @IsNotEmpty()
-  exerciseId: number;
-
-  @ApiProperty({ example: 1 })
-  @IsNumber()
-  @IsNotEmpty()
+  @IsInt()
   childId: number;
 
-  @ApiProperty({ example: 'https://cloud.com/audio/rec1.mp3' })
-  @IsUrl()
-  @IsNotEmpty()
-  fileUrl: string;
-
-  @IsOptional()
-  @IsNumber()
-  score?: number;
-
-  @IsOptional()
   @IsString()
-  aiFeedback?: string;
+  level: string;
+
+  @IsInt()
+  exerciseId: number;
+
+  @IsEnum(ExerciseType)
+  exerciseType: ExerciseType;
+
+  @IsEnum(SubmissionStatus)
+  status: SubmissionStatus;
+
+  @IsInt()
+  @IsOptional()
+  attemptsCount?: number;
+
+  @IsInt()
+  @IsOptional()
+  duration?: number;
+
+  @IsInt()
+  @IsOptional()
+  totalItems?: number;
+
+  @IsArray()
+  @IsOptional()
+  mistakes?: string[];
+
+  @IsObject()
+  @IsOptional()
+  metadata?: any;
 }

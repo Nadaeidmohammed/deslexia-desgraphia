@@ -9,10 +9,7 @@ import { Message } from './entities/message.entity';
 import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [
-    SequelizeModule.forFeature([Conversation, Message]),
-    UsersModule,
-  ],
+  imports: [SequelizeModule.forFeature([Conversation, Message]), UsersModule],
   controllers: [ChatController],
   providers: [ChatService, ChatProvider, ChatGateway],
   exports: [ChatService],

@@ -33,7 +33,6 @@ export class Conversation extends Model<Conversation> {
   })
   userId: number;
 
-
   @Column({
     type: DataType.STRING,
     allowNull: true,
@@ -58,8 +57,6 @@ export class Conversation extends Model<Conversation> {
     allowNull: false,
   })
   childId: number;
-
-
 
   @CreatedAt
   createdAt: Date;

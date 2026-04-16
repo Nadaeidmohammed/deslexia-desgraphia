@@ -1,25 +1,60 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Submission } from '../entities/submission.entity';
-import { CreateSubmissionDto } from '../dto/create-submission.dto';
+import { Child } from '../../child/entities/child.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Injectable()
 export class SubmissionProvider {
-  constructor(@InjectModel(Submission) private submissionModel: typeof Submission) {}
+  constructor(
+    @InjectModel(Submission)
+    private readonly submissionModel: typeof Submission,
+  ) {}
 
-  async create(dto: CreateSubmissionDto): Promise<Submission> {
-    return this.submissionModel.create(dto as any);
+  async create(dto: any) {
+    return this.submissionModel.create(dto);
   }
 
-  async findByChild(childId: number): Promise<Submission[]> {
+  async findAll() {
+    return this.submissionModel.findAll();
+  }
+
+  async findByChild(childId: number) {
     return this.submissionModel.findAll({
       where: { childId },
-      include: ['exercise'], 
-      order: [['createdAt', 'DESC']],
     });
   }
 
-  async findOne(id: number): Promise<Submission> {
-    return this.submissionModel.findByPk(id, { include: ['child', 'exercise'] });
+  async update(id: number, dto: any) {
+    const submission = await this.submissionModel.findByPk(id);
+
+    if (!submission) {
+      throw new NotFoundException('Submission not found');
+    }
+
+    return submission.update(dto);
+  }
+
+  async delete(id: number) {
+    const submission = await this.submissionModel.findByPk(id);
+
+    if (!submission) {
+      throw new NotFoundException('Submission not found');
+    }
+
+    await submission.destroy();
+    return { message: 'Deleted successfully' };
+  }
+  async findByChildWithChild(childId: number) {
+    return this.submissionModel.findAll({
+      where: { childId },
+      include: [
+        {
+          model: Child,
+          include: [User],
+        },
+      ],
+      order: [['createdAt', 'ASC']],
+    });
   }
 }
