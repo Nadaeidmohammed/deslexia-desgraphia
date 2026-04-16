@@ -4,52 +4,43 @@ import {
   Body,
   Get,
   Param,
-  Patch,
-  Delete,
   ParseIntPipe,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { SubmissionService } from '../services/submission.service';
 import { CreateSubmissionDto } from '../dto/create-submission.dto';
-import { UpdateSubmissionDto } from '../dto/update-submission.dto';
-
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { ApiTags } from '@nestjs/swagger';
+@ApiTags('Submissions')
+@UseGuards(JwtAuthGuard)
 @Controller('submissions')
 export class SubmissionController {
   constructor(private readonly submissionService: SubmissionService) {}
 
   // CREATE
   @Post()
-  create(@Body() dto: CreateSubmissionDto) {
-    return this.submissionService.create(dto);
-  }
-
-  // GET ALL
-  @Get()
-  findAll() {
-    return this.submissionService.findAll();
+  @ApiOperation({
+    summary: 'Create submission',
+    description: 'Flutter sends exercise result after child finishes activity',
+  })
+  create(@Body() dto: CreateSubmissionDto, @Request() req) {
+    return this.submissionService.create(dto, req.user.id);
   }
 
   // GET BY CHILD
   @Get('child/:childId')
-  findByChild(@Param('childId', ParseIntPipe) childId: number) {
-    return this.submissionService.findByChild(childId);
+  findByChild(@Param('childId', ParseIntPipe) childId: number, @Request() req) {
+    return this.submissionService.findByChild(childId, req.user.id);
   }
-
-  // UPDATE
-  @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateSubmissionDto,
-  ) {
-    return this.submissionService.update(id, dto);
-  }
-
-  // DELETE
-  @Delete(':id')
-  delete(@Param('id', ParseIntPipe) id: number) {
-    return this.submissionService.delete(id);
-  }
+  // GET REPORT
   @Get('report/:childId')
-  getReport(@Param('childId', ParseIntPipe) childId: number) {
-    return this.submissionService.getReport(childId);
+  @ApiOperation({
+    summary: 'Get child dashboard report',
+    description:
+      'Returns stats, chart, alerts, letters to practice and activities',
+  })
+  getReport(@Param('childId', ParseIntPipe) childId: number, @Request() req) {
+    return this.submissionService.getReport(childId, req.user.id);
   }
 }
