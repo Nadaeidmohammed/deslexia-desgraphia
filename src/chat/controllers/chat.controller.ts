@@ -24,7 +24,6 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
-  ApiQuery,
 } from '@nestjs/swagger';
 import { CurrentUser } from 'src/auth/decorators';
 import { QueryMessageDto } from '../dto/query-message.dto';
@@ -34,7 +33,7 @@ import { QueryMessageDto } from '../dto/query-message.dto';
 @UseGuards(JwtAuthGuard)
 @Controller('chat')
 export class ChatController {
-  constructor(private readonly chatService: ChatService) { }
+  constructor(private readonly chatService: ChatService) {}
 
   @Post('conversations')
   @ApiOperation({ summary: 'Create a new conversation' })
@@ -69,7 +68,6 @@ export class ChatController {
     return this.chatService.getConversation(id, req.user.userId);
   }
 
-
   @Get('conversations/:id/messages')
   @ApiOperation({ summary: 'Get messages from a conversation' })
   @ApiParam({ name: 'id', description: 'Conversation ID' })
@@ -82,14 +80,10 @@ export class ChatController {
     const queryDto: QueryMessageDto = {
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 50,
-      conversationId: conversationId
+      conversationId: conversationId,
     };
 
-    return this.chatService.getMessages(
-      conversationId,
-      queryDto,
-      user?.userId,
-    );
+    return this.chatService.getMessages(conversationId, queryDto, user?.userId);
   }
 
   @Patch('conversations/:id')
@@ -153,10 +147,7 @@ export class ChatController {
   })
   @ApiResponse({ status: 403, description: 'Access denied' })
   @ApiResponse({ status: 404, description: 'Message not found' })
-  async deleteMessage(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req,
-  ) {
+  async deleteMessage(@Param('id', ParseIntPipe) id: number, @Request() req) {
     await this.chatService.deleteMessage(id, req.user.userId);
     return { success: true, message: 'Message deleted successfully' };
   }

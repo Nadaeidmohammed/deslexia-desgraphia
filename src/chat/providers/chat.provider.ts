@@ -25,7 +25,7 @@ export class ChatProvider {
     private readonly conversationModel: typeof Conversation,
     @InjectModel(Message)
     private readonly messageModel: typeof Message,
-  ) { }
+  ) {}
 
   async createConversation(
     createConversationDto: CreateConversationDto,
@@ -46,7 +46,7 @@ export class ChatProvider {
       status,
       sortBy = 'lastMessageAt',
       sortOrder = 'DESC',
-      childId
+      childId,
     } = queryDto;
 
     const offset = (page - 1) * limit;

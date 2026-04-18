@@ -13,7 +13,7 @@ export enum SortOrder {
   DESC = 'DESC',
 }
 
-export class QueryMessageDto extends PaginationDto { 
+export class QueryMessageDto extends PaginationDto {
   @ApiPropertyOptional({ description: 'Filter by conversation ID' })
   @IsOptional()
   @IsInt()

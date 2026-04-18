@@ -28,7 +28,6 @@ export class QueryConversationDto extends PaginationDto {
   @IsInt()
   childId?: number;
 
-
   @ApiPropertyOptional({
     description: 'Sort by field',
     enum: ConversationSortBy,

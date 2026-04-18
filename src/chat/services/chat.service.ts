@@ -98,9 +98,14 @@ export class ChatService implements OnModuleInit {
   }
 
   // 2. تعديل إرسال الرسالة عشان يسحب اسم الطفل صح
-  async sendMessage(createMessageDto: CreateMessageDto, conversationId: number, senderId: number): Promise<Message> {
+  async sendMessage(
+    createMessageDto: CreateMessageDto,
+    conversationId: number,
+    senderId: number,
+  ): Promise<Message> {
     // جلب المحادثة شاملة بيانات الطفل (عشان نستخدم الاسم في الـ AI)
-    const conversation = await this.chatProvider.findOneConversation(conversationId);
+    const conversation =
+      await this.chatProvider.findOneConversation(conversationId);
     if (!conversation) throw new NotFoundException('Conversation not found');
 
     // سحب اسم الطفل من العلاقة اللي ضفناها في الـ Provider
@@ -115,14 +120,21 @@ export class ChatService implements OnModuleInit {
     });
 
     // جلب الـ History
-    const history = await this.chatProvider.findConversationMessages(conversationId, 10);
-    const formattedHistory = history.map(msg => ({
+    const history = await this.chatProvider.findConversationMessages(
+      conversationId,
+      10,
+    );
+    const formattedHistory = history.map((msg) => ({
       role: msg.senderId === this.SHELBY_BOT_ID ? 'assistant' : 'user',
       content: msg.content,
     }));
 
     // استدعاء الـ AI مع الـ Prompt المصري الجديد واسم الطفل
-    const aiAnalysis = await this.getAiResponse(createMessageDto.content, formattedHistory, childName);
+    const aiAnalysis = await this.getAiResponse(
+      createMessageDto.content,
+      formattedHistory,
+      childName,
+    );
 
     // حفظ رد شلبي بالميتا داتا
     return this.chatProvider.createMessage({
@@ -135,7 +147,11 @@ export class ChatService implements OnModuleInit {
   }
 
   // 3. الـ Prompt المصري المحدث مع اسم الطفل
-  private async getAiResponse(userContent: string, history: any[], childName: string) {
+  private async getAiResponse(
+    userContent: string,
+    history: any[],
+    childName: string,
+  ) {
     const systemPrompt = `
     You are an AI assistant specialized in Dyslexia and Dysgraphia named Shelby "شلبي".
     You are helping a parent with their child named "${childName}".
@@ -179,7 +195,7 @@ export class ChatService implements OnModuleInit {
       ],
       model: 'llama-3.1-8b-instant',
       temperature: 0.2,
-      response_format: { type: "json_object" }
+      response_format: { type: 'json_object' },
     });
 
     try {
@@ -187,7 +203,7 @@ export class ChatService implements OnModuleInit {
     } catch (error) {
       return {
         reply: `يا فندم حصل مشكلة بسيطة، ممكن نراجع كلامنا عن ${childName} تاني؟`,
-        feedback: { detected_words: [], suspected_letter: "", issue_type: "" }
+        feedback: { detected_words: [], suspected_letter: '', issue_type: '' },
       };
     }
   }
@@ -229,7 +245,8 @@ export class ChatService implements OnModuleInit {
   async deleteConversation(id: number, userId: number): Promise<void> {
     const conversation = await this.chatProvider.findOneConversation(id);
     if (!conversation) throw new NotFoundException('Conversation not found');
-    if (conversation.userId !== userId) throw new ForbiddenException('No permission');
+    if (conversation.userId !== userId)
+      throw new ForbiddenException('No permission');
     await this.chatProvider.deleteConversation(id);
   }
 
@@ -240,7 +257,8 @@ export class ChatService implements OnModuleInit {
   async deleteMessage(id: number, userId: number): Promise<void> {
     const message = await this.chatProvider.findMessageById(id);
     if (!message) throw new NotFoundException('Message not found');
-    if (message.senderId !== userId) throw new ForbiddenException('Access denied');
+    if (message.senderId !== userId)
+      throw new ForbiddenException('Access denied');
     await this.chatProvider.deleteMessage(id);
   }
 
@@ -263,7 +281,9 @@ export class ChatService implements OnModuleInit {
           avatar: 'https://cdn-icons-png.flaticon.com/512/616/616430.png', // لوجو مؤقت لشلبي
         } as any);
 
-        this.logger.log('✅ Shelby Bot was created successfully in the database.');
+        this.logger.log(
+          '✅ Shelby Bot was created successfully in the database.',
+        );
       } else {
         this.logger.log('ℹ️ Shelby Bot already exists.');
       }

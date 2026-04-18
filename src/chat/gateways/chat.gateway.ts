@@ -10,8 +10,7 @@ import {
 import { Socket, Server } from 'socket.io';
 import { ChatService } from '../services/chat.service';
 import { CreateMessageDto } from '../dto';
-import { UseGuards, Logger } from '@nestjs/common';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { Logger } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {

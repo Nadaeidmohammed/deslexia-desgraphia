@@ -44,8 +44,7 @@ export class CreateSubmissionDto {
   @ApiProperty({
     enum: ExerciseType,
     example: 'reading',
-    description:
-      'Exercise type: reading / writing / listening',
+    description: 'Exercise type: reading / writing / listening',
   })
   @IsEnum(ExerciseType)
   exerciseType: ExerciseType;
