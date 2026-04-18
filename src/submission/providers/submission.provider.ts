@@ -9,7 +9,7 @@ export class SubmissionProvider {
   constructor(
     @InjectModel(Submission)
     private readonly submissionModel: typeof Submission,
-  ) {}
+  ) { }
 
   async create(dto: any) {
     return this.submissionModel.create(dto);
@@ -51,7 +51,14 @@ export class SubmissionProvider {
       include: [
         {
           model: Child,
-          include: [User],
+          attributes: ['id', 'name', 'avatar', 'parentId', 'birthDate'],
+          include: [
+            {
+              model: User,
+              as: 'parent',
+              attributes: ['id', 'email'],
+            },
+          ],
         },
       ],
       order: [['createdAt', 'ASC']],
