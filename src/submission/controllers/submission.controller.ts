@@ -11,12 +11,12 @@ import {
 import { SubmissionService } from '../services/submission.service';
 import { CreateSubmissionDto } from '../dto/create-submission.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 @ApiTags('Submissions')
 @UseGuards(JwtAuthGuard)
 @Controller('submissions')
 export class SubmissionController {
-  constructor(private readonly submissionService: SubmissionService) {}
+  constructor(private readonly submissionService: SubmissionService) { }
 
   // CREATE
   @Post()
