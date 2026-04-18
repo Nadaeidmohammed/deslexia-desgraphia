@@ -51,7 +51,14 @@ export class SubmissionProvider {
       include: [
         {
           model: Child,
-          include: [User],
+          attributes: ['id', 'name', 'avatar', 'parentId', 'birthDate'],
+          include: [
+            {
+              model: User,
+              as: 'parent',
+              attributes: ['id', 'email'],
+            },
+          ],
         },
       ],
       order: [['createdAt', 'ASC']],

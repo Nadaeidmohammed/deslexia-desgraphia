@@ -67,8 +67,11 @@ export class Conversation extends Model<Conversation> {
   @BelongsTo(() => User)
   user: User;
 
-  @BelongsTo(() => Child)
-  child: any;
+  @BelongsTo(() => Child, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
+  child: Child;
 
   @HasMany(() => Message)
   messages: Message[];

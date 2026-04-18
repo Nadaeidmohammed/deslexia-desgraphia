@@ -26,7 +26,7 @@ export class SubmissionService {
       throw new NotFoundException('Child not found');
     }
 
-    if (child.parentId !== parentId) {
+    if (Number(child.parentId) !== Number(parentId)) {
       throw new ForbiddenException('You cannot add data to this child');
     }
 
@@ -44,7 +44,8 @@ export class SubmissionService {
 
     const child = submissions[0].child;
 
-    if (child.parentId !== parentId) {
+    if (Number(child.parentId) !== Number(parentId)) {
+      console.log('Mismatch:', child.parentId, parentId);
       throw new ForbiddenException('You cannot access this child data');
     }
 
@@ -63,9 +64,30 @@ export class SubmissionService {
       throw new ForbiddenException('You cannot access this child data');
     }
     const parent = child.parent;
-    const age =
-      new Date().getFullYear() - new Date(child.birthDate).getFullYear();
+    let age = 0;
+    if (child.birthDate) {
+      try {
+        const bDate = new Date(child.birthDate);
 
+        if (!isNaN(bDate.getTime()) && bDate.getFullYear() > 1900) {
+          age = 2026 - bDate.getFullYear();
+          console.log(
+            'TRACE: Method 1 (Date Object) worked. Year:',
+            bDate.getFullYear(),
+          );
+        } else {
+          const dateStr = String(child.birthDate);
+          const yearMatch = dateStr.match(/\d{4}/);
+          if (yearMatch) {
+            const year = parseInt(yearMatch[0], 10);
+            age = 2026 - year;
+            console.log('TRACE: Method 2 (Regex) worked. Year:', year);
+          }
+        }
+      } catch (e) {
+        console.error('TRACE: Age calculation crashed:', e);
+      }
+    }
     // stats
     const stats = {
       reading: this.calculateType(submissions, 'reading'),
