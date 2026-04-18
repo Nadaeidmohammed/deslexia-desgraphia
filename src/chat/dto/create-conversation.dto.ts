@@ -1,7 +1,14 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEnum, IsOptional, IsString } from "class-validator";
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class CreateConversationDto {
+  @ApiProperty({
+    description: 'Child ID',
+    example: 1,
+  })
+  @IsNotEmpty()
+  childId: number;
+
   @ApiProperty({
     description: 'Conversation title',
     example: 'جلسة تحليل حرف السين',

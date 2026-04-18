@@ -24,7 +24,6 @@ import { User } from 'src/users/entities/user.entity';
 export class ChatService implements OnModuleInit {
   private groq: Groq;
   private readonly logger = new Logger(ChatService.name);
-  // تعريف الـ ID الثابت لشلبي
   private readonly SHELBY_BOT_ID = 999;
 
   constructor(
@@ -39,13 +38,6 @@ export class ChatService implements OnModuleInit {
     }
 
     this.groq = new Groq({ apiKey });
-  }
-
-  async createConversation(
-    createConversationDto: CreateConversationDto,
-    userId: number,
-  ): Promise<Conversation> {
-    return this.chatProvider.createConversation(createConversationDto, userId);
   }
 
   async findUserConversations(userId: number): Promise<Conversation[]> {
@@ -98,18 +90,23 @@ export class ChatService implements OnModuleInit {
     return this.chatProvider.countConversations();
   }
 
-  async sendMessage(
-    createMessageDto: CreateMessageDto,
-    conversationId: number,
-    senderId: number,
-  ): Promise<Message> {
-    const conversation = await this.getConversation(conversationId, senderId);
+  async createConversation(
+    createConversationDto: CreateConversationDto,
+    userId: number,
+  ): Promise<Conversation> {
+    return this.chatProvider.createConversation(createConversationDto, userId);
+  }
 
-    if (conversation.status === 'archived') {
-      throw new ForbiddenException('Cannot send message to archived conversation');
-    }
+  // 2. تعديل إرسال الرسالة عشان يسحب اسم الطفل صح
+  async sendMessage(createMessageDto: CreateMessageDto, conversationId: number, senderId: number): Promise<Message> {
+    // جلب المحادثة شاملة بيانات الطفل (عشان نستخدم الاسم في الـ AI)
+    const conversation = await this.chatProvider.findOneConversation(conversationId);
+    if (!conversation) throw new NotFoundException('Conversation not found');
 
-    // 1. حفظ رسالة المستخدم
+    // سحب اسم الطفل من العلاقة اللي ضفناها في الـ Provider
+    const childName = (conversation as any).child?.name || 'البطل';
+
+    // حفظ رسالة المستخدم
     await this.chatProvider.createMessage({
       conversationId,
       senderId,
@@ -117,51 +114,62 @@ export class ChatService implements OnModuleInit {
       type: 'text',
     });
 
-    // 2. جلب تاريخ المحادثة وتنسيقه للـ AI
+    // جلب الـ History
     const history = await this.chatProvider.findConversationMessages(conversationId, 10);
     const formattedHistory = history.map(msg => ({
-      // لو الـ senderId هو شلبي يبقى assistant، غير كدة يبقى user
       role: msg.senderId === this.SHELBY_BOT_ID ? 'assistant' : 'user',
       content: msg.content,
     }));
 
-    // 3. استدعاء Groq
-    const aiAnalysis = await this.getAiResponse(createMessageDto.content, formattedHistory);
+    // استدعاء الـ AI مع الـ Prompt المصري الجديد واسم الطفل
+    const aiAnalysis = await this.getAiResponse(createMessageDto.content, formattedHistory, childName);
 
-    // 4. حفظ رد شلبي باستخدام الـ ID الثابت 999
-    const botMessage = await this.chatProvider.createMessage({
+    // حفظ رد شلبي بالميتا داتا
+    return this.chatProvider.createMessage({
       conversationId,
       senderId: this.SHELBY_BOT_ID,
       content: aiAnalysis.reply,
       type: 'text',
       metadata: aiAnalysis.feedback,
     });
-
-    return botMessage;
   }
 
-  private async getAiResponse(userContent: string, history: any[]) {
+  // 3. الـ Prompt المصري المحدث مع اسم الطفل
+  private async getAiResponse(userContent: string, history: any[], childName: string) {
     const systemPrompt = `
-    You are an AI assistant named Shelby "شلبي" that helps parents support their children with learning difficulties such as dyslexia and dysgraphia.
-    You must ALWAYS respond with VALID JSON ONLY.
+    You are an AI assistant specialized in Dyslexia and Dysgraphia named Shelby "شلبي".
+    You are helping a parent with their child named "${childName}".
+    Your ONLY output must be a single, valid JSON object. 
 
-    Response format:
+    ### JSON Structure:
     {
-     "reply": "A natural Arabic message to the parent",
+     "reply": "A warm, natural Arabic response to the parent",
      "feedback": {
-        "detected_words": [],
-        "suspected_letter": "",
-        "issue_type": "dyslexia or dysgraphia or none"
-        }
+       "detected_words": [],
+       "suspected_letter": "",
+       "issue_type": "" 
+      }
     }
 
-    Rules:
-    - The "reply" MUST be in Arabic language only.
-    - The "reply" must be a normal, friendly Arabic response to the parent.
-    - Extract words mentioned by the parent that show difficulty.
-    - Detect the most repeated letter causing trouble.
-    - Return ONLY JSON.
-  `;
+    ### Rules for "reply":
+    - MUST be in Egyptian/White Arabic dialect (اللهجة المصرية البيضاء).
+    - Always refer to the child by their name "${childName}" in your reply.
+    - Respond to greetings naturally (e.g., "وعليكم السلام يا فندم").
+    - If a problem is mentioned, reassure the parent and say: "سجلت الكلمات دي في خطة ${childName} اليومية".
+    - DO NOT explain the analysis or mention JSON.
+
+    ### Rules for "feedback":
+    - "detected_words": ONLY the target words mentioned by the parent.
+    - "suspected_letter": ONE character representing the difficulty.
+    - "issue_type": ONLY "dyslexia" or "dysgraphia".
+
+    ### Constraint:
+    IF THE USER ASKS ABOUT SOMETHING IRRELEVANT:
+    - Respond in "reply" that you are specialized in learning difficulties only.
+    - Keep "feedback" fields empty.
+
+    CRITICAL: RETURN ONLY THE JSON.
+    `;
 
     const completion = await this.groq.chat.completions.create({
       messages: [
@@ -174,9 +182,15 @@ export class ChatService implements OnModuleInit {
       response_format: { type: "json_object" }
     });
 
-    return JSON.parse(completion.choices[0].message.content);
+    try {
+      return JSON.parse(completion.choices[0].message.content);
+    } catch (error) {
+      return {
+        reply: `يا فندم حصل مشكلة بسيطة، ممكن نراجع كلامنا عن ${childName} تاني؟`,
+        feedback: { detected_words: [], suspected_letter: "", issue_type: "" }
+      };
+    }
   }
-
   async getMessages(
     conversationId: number,
     query: QueryMessageDto,

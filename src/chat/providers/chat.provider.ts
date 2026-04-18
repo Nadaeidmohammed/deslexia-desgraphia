@@ -8,6 +8,7 @@ import { MessageType } from '../dto/create-message.dto';
 import { QueryConversationDto } from '../dto/query-conversation.dto';
 import { QueryMessageDto } from '../dto/query-message.dto';
 import { Op } from 'sequelize';
+import { Child } from 'src/child/entities/child.entity';
 
 interface CreateMessagePayload {
   conversationId: number;
@@ -45,6 +46,7 @@ export class ChatProvider {
       status,
       sortBy = 'lastMessageAt',
       sortOrder = 'DESC',
+      childId
     } = queryDto;
 
     const offset = (page - 1) * limit;
@@ -56,6 +58,9 @@ export class ChatProvider {
     if (status) {
       whereClause.status = status;
     }
+    if (childId) {
+      whereClause.childId = childId;
+    }
 
     return this.conversationModel.findAndCountAll({
       where: whereClause,
@@ -63,7 +68,11 @@ export class ChatProvider {
         {
           model: User,
           as: 'user',
-          attributes: ['id','avatar'],
+          attributes: ['id', 'avatar'],
+        },
+        {
+          model: Child,
+          attributes: ['id', 'name'],
         },
         {
           model: Message,
@@ -86,7 +95,11 @@ export class ChatProvider {
         {
           model: User,
           as: 'user',
-          attributes: ['id','avatar'],
+          attributes: ['id', 'avatar'],
+        },
+        {
+          model: Child,
+          attributes: ['id', 'name'],
         },
       ],
     });
@@ -160,7 +173,7 @@ export class ChatProvider {
         {
           model: User,
           as: 'sender',
-          attributes: ['id','avatar'],
+          attributes: ['id', 'avatar'],
         },
         {
           model: Conversation,
@@ -201,7 +214,7 @@ export class ChatProvider {
         {
           model: User,
           as: 'sender',
-          attributes: ['id','avatar'],
+          attributes: ['id', 'avatar'],
         },
       ],
       order: [['createdAt', 'ASC']],
