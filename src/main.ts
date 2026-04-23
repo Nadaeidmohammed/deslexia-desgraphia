@@ -27,7 +27,6 @@ async function bootstrap() {
   const corsOrigins = configService.get('CORS_ORIGIN')?.split(',') || [
     'http://localhost:3000',
     'https://dyslexia-desgraphia.netlify.app',
-    'https://deslexia-desgraphia.netlify.app/',
     'http://localhost:3001'
   ];
 
