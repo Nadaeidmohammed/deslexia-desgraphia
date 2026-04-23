@@ -24,24 +24,23 @@ async function bootstrap() {
   );
 
   // CORS configuration
-  const corsOrigins = configService.get('CORS_ORIGIN')?.split(',') || [
-    'http://localhost:3000',
-    'https://dyslexia-desgraphia.netlify.app',
-    'http://localhost:3001'
-  ];
+  // CORS configuration
+  const rawOrigins = configService.get('CORS_ORIGIN');
+  const corsOrigins = rawOrigins ? rawOrigins.split(',') : ['http://localhost:3000'];
 
   app.enableCors({
-    origin: corsOrigins,
+    origin: (origin, callback) => {
+      if (!origin || corsOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    allowedHeaders: [
-      'Origin',
-      'X-Requested-With',
-      'Content-Type',
-      'Accept',
-      'Authorization',
-      'Access-Control-Allow-Allow-Origin',
-    ],
+    allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
   // Swagger documentation
